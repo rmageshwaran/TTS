@@ -729,24 +729,11 @@ class SesameCSMPlugin(BaseTTSPlugin):
     
     def _generate_audio(self, text: str, voice_embedding: Optional[np.ndarray], 
                        context_embedding: Optional[np.ndarray]) -> np.ndarray:
-        """Generate audio using the model."""
-        try:
-            # Check if we have a proper TTS model
-            if hasattr(self, 'model_type') and self.model_type == "tts":
-                # Use proper TTS model
-                return self._generate_tts_audio(text)
-            elif hasattr(self.model, 'generate') and hasattr(self, 'processor'):
-                # Try with CSM model (but it likely won't work for audio)
-                return self._generate_csm_audio(text)
-            else:
-                # Fallback to high-quality mock audio
-                logger.warning("Using high-quality mock audio generation")
-                return self._generate_high_quality_mock_audio(text)
-            
-        except Exception as e:
-            logger.error(f"Audio generation failed: {e}")
-            # Return high-quality mock audio as fallback
-            return self._generate_high_quality_mock_audio(text)
+        """Generate audio using ONLY Sesame CSM model - NO FALLBACKS."""
+        logger.info("🔧 CSM-ONLY: Using pure Sesame CSM model for audio generation")
+        
+        # Use ONLY Sesame CSM model - no fallbacks, no alternatives
+        return self._generate_csm_audio(text)
     
     def _generate_tts_audio(self, text: str) -> np.ndarray:
         """Generate audio using a proper TTS model."""
@@ -798,8 +785,8 @@ class SesameCSMPlugin(BaseTTSPlugin):
             return audio_data
             
         except Exception as e:
-            logger.error(f"TTS audio generation failed: {e}")
-            return self._generate_high_quality_mock_audio(text)
+            logger.error(f"🔧 CSM-ONLY: Sesame CSM audio generation failed: {e}")
+            raise e  # No fallbacks - let the error propagate
     
     def _generate_csm_audio(self, text: str) -> np.ndarray:
         """Generate audio using CSM model - CORRECTED IMPLEMENTATION."""
@@ -938,13 +925,13 @@ class SesameCSMPlugin(BaseTTSPlugin):
                 raise
             
         except Exception as e:
-            logger.error(f"CSM audio generation failed: {e}")
-            logger.error(f"Error type: {type(e)}")
+            logger.error(f"🔧 CSM-ONLY: Sesame CSM audio generation failed: {e}")
+            logger.error(f"🔧 CSM-ONLY: Error type: {type(e)}")
             import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
+            logger.error(f"🔧 CSM-ONLY: Traceback: {traceback.format_exc()}")
             
-            # Return high-quality mock audio as fallback
-            return self._generate_high_quality_mock_audio(text)
+            # NO FALLBACKS - Pure CSM only
+            raise e
     
     def _generate_high_quality_mock_audio(self, text: str) -> np.ndarray:
         """Generate high-quality mock audio that sounds more like real speech."""

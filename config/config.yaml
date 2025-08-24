@@ -45,7 +45,7 @@ tts:
   load_balancing: false
   load_balancing_strategy: "weighted"  # round_robin, least_used, weighted
   health_check_interval: 30.0
-  engine_priority: ["sesame_csm", "pyttsx3", "sapi"]
+  engine_priority: ["sesame_csm"]  # ONLY Sesame CSM - no alternatives
   
   # Voice settings
   voice_settings:

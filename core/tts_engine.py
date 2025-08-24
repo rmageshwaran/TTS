@@ -159,10 +159,10 @@ class TTSEngine:
         self.load_balancing_enabled = config.get("tts", {}).get("load_balancing", True)
         self._lock = threading.Lock()
         
-        # Engine preferences
+        # Engine preferences - ONLY Sesame CSM
         self.default_engine = config.get("tts", {}).get("default_engine", "sesame_csm")
-        self.fallback_engine = config.get("tts", {}).get("fallback_engine", "pyttsx3")
-        self.engine_priority = config.get("tts", {}).get("engine_priority", [])
+        self.fallback_engine = None  # NO FALLBACKS - Pure CSM only
+        self.engine_priority = config.get("tts", {}).get("engine_priority", ["sesame_csm"])
         
         # Callbacks
         self.engine_change_callbacks: List[Callable] = []
@@ -790,12 +790,8 @@ class TTSEngine:
             
             logger.error(f"Speech generation failed with {target_engine} after {processing_time:.2f}s: {e}")
             
-            # Try fallback engine if primary failed
-            if target_engine != self.fallback_engine and self.fallback_engine in self.plugins:
-                fallback_status = self.engine_status.get(self.fallback_engine, EngineStatus.UNKNOWN)
-                if fallback_status == EngineStatus.AVAILABLE:
-                    logger.info(f"Trying fallback engine: {self.fallback_engine}")
-                    return self.generate_speech(text, speaker_id, self.fallback_engine, use_context)
+            # NO FALLBACKS - Pure Sesame CSM only
+            logger.info(f"🔧 CSM-ONLY: No fallback engines - using only Sesame CSM")
             
             return TTSResult(
                 audio_data=b"",
