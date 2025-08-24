@@ -338,17 +338,18 @@ class SesameCSMPlugin(BaseTTSPlugin):
                 return True
             
             # Check if we can download the model
-            # Try TTS model first
+            # Try CSM model with correct import
             try:
-                from transformers import AutoModelForTextToSpeech
-                AutoModelForTextToSpeech.from_pretrained(
+                from transformers import AutoModel
+                AutoModel.from_pretrained(
                     self.model_name, 
                     cache_dir=str(self.cache_dir),
-                    token='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'
+                    token='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',
+                    trust_remote_code=True
                 )
                 return True
-            except Exception as tts_error:
-                logger.warning(f"TTS model not available: {tts_error}")
+            except Exception as csm_error:
+                logger.warning(f"CSM model not available: {csm_error}")
             
             # Fallback to CSM model
             try:
@@ -462,24 +463,25 @@ class SesameCSMPlugin(BaseTTSPlugin):
         try:
             logger.info(f"Loading model from {model_path}")
             
-            # Try to load as a TTS model first
+            # Load as CSM model with correct imports
             try:
-                from transformers import AutoProcessor, AutoModelForTextToSpeech
+                from transformers import AutoProcessor, AutoModel
                 
                 # Set HuggingFace token for authentication
                 import os
                 os.environ['HF_TOKEN'] = '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'
                 
-                # Try to load as TTS model
+                # Load CSM model
                 processor = AutoProcessor.from_pretrained(
                     str(model_path),
                     token=os.environ['HF_TOKEN']
                 )
                 
-                model = AutoModelForTextToSpeech.from_pretrained(
+                model = AutoModel.from_pretrained(
                     str(model_path),
                     token=os.environ['HF_TOKEN'],
-                    device_map=self.device_type
+                    device_map=self.device_type,
+                    trust_remote_code=True
                 )
                 
                 # Store processor for later use
@@ -488,8 +490,8 @@ class SesameCSMPlugin(BaseTTSPlugin):
                 
                 return model
                 
-            except Exception as tts_error:
-                logger.warning(f"Failed to load as TTS model: {tts_error}")
+            except Exception as csm_error:
+                logger.warning(f"Failed to load as CSM model: {csm_error}")
                 
                 # Fallback to CSM model
                 from transformers import CsmForConditionalGeneration, AutoProcessor
@@ -529,9 +531,9 @@ class SesameCSMPlugin(BaseTTSPlugin):
             import os
             os.environ['HF_TOKEN'] = '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'
             
-            # Try to download as TTS model first
+            # Download as CSM model with correct imports
             try:
-                from transformers import AutoProcessor, AutoModelForTextToSpeech
+                from transformers import AutoProcessor, AutoModel
                 
                 # Download the processor and model
                 processor = AutoProcessor.from_pretrained(
@@ -540,11 +542,12 @@ class SesameCSMPlugin(BaseTTSPlugin):
                     token=os.environ['HF_TOKEN']
                 )
                 
-                model = AutoModelForTextToSpeech.from_pretrained(
+                model = AutoModel.from_pretrained(
                     self.model_name,
                     cache_dir=str(self.cache_dir),
                     token=os.environ['HF_TOKEN'],
-                    device_map=self.device_type
+                    device_map=self.device_type,
+                    trust_remote_code=True
                 )
                 
                 # Store processor for later use
@@ -553,8 +556,8 @@ class SesameCSMPlugin(BaseTTSPlugin):
                 
                 return model
                 
-            except Exception as tts_error:
-                logger.warning(f"Failed to download as TTS model: {tts_error}")
+            except Exception as csm_error:
+                logger.warning(f"Failed to download as CSM model: {csm_error}")
                 
                 # Fallback to CSM model
                 from transformers import CsmForConditionalGeneration, AutoProcessor
@@ -730,7 +733,7 @@ class SesameCSMPlugin(BaseTTSPlugin):
     def _generate_audio(self, text: str, voice_embedding: Optional[np.ndarray], 
                        context_embedding: Optional[np.ndarray]) -> np.ndarray:
         """Generate audio using ONLY Sesame CSM model - NO FALLBACKS."""
-        logger.info("🔧 CSM-ONLY: Using pure Sesame CSM model for audio generation")
+        logger.info("CSM-ONLY: Using pure Sesame CSM model for audio generation")
         
         # Use ONLY Sesame CSM model - no fallbacks, no alternatives
         return self._generate_csm_audio(text)
@@ -747,11 +750,11 @@ class SesameCSMPlugin(BaseTTSPlugin):
                     text = truncated_text[:last_space]
                 else:
                     text = truncated_text
-                logger.info(f"🔧 CSM: Truncated text to {len(text)} characters for reliable generation")
+                logger.info(f"CSM: Truncated text to {len(text)} characters for reliable generation")
             
             # Format text with speaker ID for CSM
             formatted_text = f"[0]{text}"
-            logger.info(f"🔧 CSM: Generating audio for: '{formatted_text}'")
+            logger.info(f"CSM: Generating audio for: '{formatted_text}'")
             
             # Prepare inputs
             inputs = self.processor(formatted_text, add_special_tokens=True, return_tensors="pt").to(self.device_type)
@@ -785,7 +788,7 @@ class SesameCSMPlugin(BaseTTSPlugin):
             return audio_data
             
         except Exception as e:
-            logger.error(f"🔧 CSM-ONLY: Sesame CSM audio generation failed: {e}")
+            logger.error(f"CSM-ONLY: Sesame CSM audio generation failed: {e}")
             raise e  # No fallbacks - let the error propagate
     
     def _generate_csm_audio(self, text: str) -> np.ndarray:
@@ -800,7 +803,7 @@ class SesameCSMPlugin(BaseTTSPlugin):
                     text = truncated_text[:last_space]
                 else:
                     text = truncated_text
-                logger.info(f"🔧 CSM: Truncated text to {len(text)} characters for reliable generation")
+                logger.info(f"CSM: Truncated text to {len(text)} characters for reliable generation")
             
             # Prepare text with speaker ID (official CSM format)
             speaker_id = 0  # Default speaker
@@ -925,10 +928,10 @@ class SesameCSMPlugin(BaseTTSPlugin):
                 raise
             
         except Exception as e:
-            logger.error(f"🔧 CSM-ONLY: Sesame CSM audio generation failed: {e}")
-            logger.error(f"🔧 CSM-ONLY: Error type: {type(e)}")
+            logger.error(f"CSM-ONLY: Sesame CSM audio generation failed: {e}")
+            logger.error(f"CSM-ONLY: Error type: {type(e)}")
             import traceback
-            logger.error(f"🔧 CSM-ONLY: Traceback: {traceback.format_exc()}")
+            logger.error(f"CSM-ONLY: Traceback: {traceback.format_exc()}")
             
             # NO FALLBACKS - Pure CSM only
             raise e

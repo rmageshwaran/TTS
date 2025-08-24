@@ -1,6 +1,5 @@
-"""TTS plugin implementations."""
+"""TTS plugin implementations - ONLY Sesame CSM."""
 
-from .demo_tts_plugin import DemoTTSPlugin
 from .sesame_csm_plugin import SesameCSMPlugin
 
-__all__ = ['DemoTTSPlugin', 'SesameCSMPlugin']
+__all__ = ['SesameCSMPlugin']

@@ -177,19 +177,18 @@ class TTSEngine:
             self.start_health_monitoring()
     
     def _load_default_plugins(self):
-        """Load default TTS plugins."""
+        """Load ONLY Sesame CSM plugin - Pure CSM system."""
         plugin_configs = {
-            "demo_tts": "plugins.tts.demo_tts_plugin",
-            "sesame_csm": "plugins.tts.sesame_csm_plugin",
-            "pyttsx3": "plugins.tts.fallback_tts_plugin",
-            "sapi": "plugins.tts.sapi_plugin"
+            "sesame_csm": "plugins.tts.sesame_csm_plugin"
         }
         
         for plugin_name, module_path in plugin_configs.items():
             try:
                 self.load_plugin(plugin_name, module_path)
+                logger.info(f"CSM-ONLY: Successfully loaded {plugin_name}")
             except Exception as e:
-                logger.warning(f"Failed to load plugin {plugin_name}: {e}")
+                logger.error(f"CSM-ONLY: Failed to load {plugin_name}: {e}")
+                raise e  # No fallbacks - CSM must load or system fails
     
     def load_plugin(self, plugin_name: str, module_path: Optional[str] = None) -> bool:
         """
@@ -791,7 +790,7 @@ class TTSEngine:
             logger.error(f"Speech generation failed with {target_engine} after {processing_time:.2f}s: {e}")
             
             # NO FALLBACKS - Pure Sesame CSM only
-            logger.info(f"🔧 CSM-ONLY: No fallback engines - using only Sesame CSM")
+            logger.info(f"CSM-ONLY: No fallback engines - using only Sesame CSM")
             
             return TTSResult(
                 audio_data=b"",
