@@ -124,6 +124,10 @@ vb_cable:
   # Preferred VB-Cable type (virtual_cable, voicemeeter, voicemeeter_banana, voicemeeter_potato)
   preferred_type: "virtual_cable"
   
+  # Audio driver preferences (ordered by preference)
+  # Available: WASAPI, DirectSound, MME, WDM-KS
+  preferred_hostapis: ["WASAPI", "DirectSound", "MME", "WDM-KS"]
+  
   # Latency optimization
   enable_latency_optimization: true
   routing_buffer_size: 512

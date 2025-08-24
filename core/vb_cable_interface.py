@@ -490,38 +490,62 @@ class VBCableInterface:
             # Create optimized stream for VB-Cable
             stream_params = self._get_optimized_stream_params()
             
-            with sd.OutputStream(
-                device=self.active_device.device_id,
-                channels=stream_params['channels'],
-                samplerate=stream_params['sample_rate'],
-                blocksize=stream_params['buffer_size'],
-                dtype=np.float32,
-                latency=stream_params['latency']
-            ) as stream:
-                
-                # Write audio to VB-Cable
-                stream.write(audio_array)
-                
-                # Calculate metrics
-                routing_time = (time.time() - start_time) * 1000  # Convert to ms
-                
-                # Update metrics
-                with self._lock:
-                    self.metrics.update_success(routing_time, len(audio_data))
-                
-                result = VBCableRoutingResult(
-                    success=True,
-                    device_used=self.active_device.name,
-                    latency_ms=routing_time,
-                    bytes_transferred=len(audio_data),
-                    routing_time_ms=routing_time,
-                    cable_type=self.active_device.cable_type
-                )
-                
-                # Notify callbacks
-                self._notify_routing_success(result)
-                
-                return result
+            # Try multiple host APIs to avoid WDM-KS blocking issues
+            preferred_hostapis = self._get_preferred_hostapis()
+            last_error = None
+            
+            for hostapi_id in preferred_hostapis:
+                try:
+                    # Create device specification with specific host API
+                    device_spec = (self.active_device.device_id, hostapi_id)
+                    
+                    with sd.OutputStream(
+                        device=device_spec,
+                        channels=stream_params['channels'],
+                        samplerate=stream_params['sample_rate'],
+                        blocksize=stream_params['buffer_size'],
+                        dtype=np.float32,
+                        latency=stream_params['latency']
+                    ) as stream:
+                        
+                        # Write audio to VB-Cable
+                        stream.write(audio_array)
+                        
+                        # Calculate metrics
+                        routing_time = (time.time() - start_time) * 1000  # Convert to ms
+                        
+                        # Update metrics
+                        with self._lock:
+                            self.metrics.update_success(routing_time, len(audio_data))
+                        
+                        hostapi_name = sd.query_hostapis()[hostapi_id]['name']
+                        logger.info(f"VB-Cable routing successful using {hostapi_name}")
+                        
+                        result = VBCableRoutingResult(
+                            success=True,
+                            device_used=f"{self.active_device.name} ({hostapi_name})",
+                            latency_ms=routing_time,
+                            bytes_transferred=len(audio_data),
+                            routing_time_ms=routing_time,
+                            cable_type=self.active_device.cable_type
+                        )
+                        
+                        # Notify callbacks
+                        self._notify_routing_success(result)
+                        
+                        return result
+                        
+                except Exception as api_error:
+                    hostapi_name = sd.query_hostapis()[hostapi_id]['name'] if hostapi_id < len(sd.query_hostapis()) else f"API-{hostapi_id}"
+                    logger.debug(f"Host API {hostapi_name} failed: {api_error}")
+                    last_error = api_error
+                    continue
+            
+            # If all host APIs failed, raise the last error
+            if last_error:
+                raise last_error
+            else:
+                raise Exception("No suitable host API found for VB-Cable routing")
         
         except Exception as e:
             # Update failure metrics
@@ -619,6 +643,40 @@ class VBCableInterface:
             params['latency'] = 'high'
         
         return params
+    
+    def _get_preferred_hostapis(self) -> List[int]:
+        """Get ordered list of preferred host APIs for VB-Cable."""
+        preferred_apis = []
+        
+        # Get preference order from configuration
+        vb_config = self.config.get("vb_cable", {})
+        preferred_hostapi_names = vb_config.get("preferred_hostapis", ["WASAPI", "DirectSound", "MME", "WDM-KS"])
+        
+        # Get all available host APIs
+        try:
+            hostapis = sd.query_hostapis()
+            
+            # Map preference names to actual API indices
+            for preferred_name in preferred_hostapi_names:
+                for i, api in enumerate(hostapis):
+                    if preferred_name.upper() in api['name'].upper():
+                        if i not in preferred_apis:  # Avoid duplicates
+                            preferred_apis.append(i)
+                            logger.debug(f"Added preferred host API: {api['name']} (index {i})")
+            
+            # Add any remaining APIs not in preferences (fallback)
+            for i, api in enumerate(hostapis):
+                if i not in preferred_apis:
+                    preferred_apis.append(i)
+                    logger.debug(f"Added fallback host API: {api['name']} (index {i})")
+                    
+        except Exception as e:
+            logger.warning(f"Failed to get host APIs: {e}")
+            # Fallback to system default
+            preferred_apis = [sd.default.hostapi] if sd.default.hostapi is not None else []
+        
+        logger.info(f"VB-Cable host API preference order: {[sd.query_hostapis()[i]['name'] for i in preferred_apis[:3]]}")
+        return preferred_apis
     
     def _start_monitoring(self):
         """Start VB-Cable monitoring thread."""

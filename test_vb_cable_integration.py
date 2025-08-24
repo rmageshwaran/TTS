@@ -283,19 +283,30 @@ class TestVBCableIntegration:
             from core.text_processor import TextProcessor
             from core.tts_engine import TTSEngine
             from core.audio_processor import AudioProcessor
-            from plugins.tts.demo_tts_plugin import DemoTTSPlugin
+            from plugins.tts.sesame_csm_plugin import SesameCSMPlugin
             
-            # Initialize components
-            text_processor = TextProcessor(self.test_config)
-            tts_engine = TTSEngine(self.test_config)
-            audio_processor = AudioProcessor(self.test_config)
+            # Initialize components with raw config (needed for Sesame CSM)
+            from config.config_manager import ConfigManager
+            config_manager = ConfigManager()
+            config_manager.load()  # Load the configuration
+            raw_config = config_manager.raw_config  # Get raw config dict
+            
+            text_processor = TextProcessor(raw_config)
+            tts_engine = TTSEngine(raw_config)
+            audio_processor = AudioProcessor(raw_config)
             virtual_audio = VirtualAudioInterface(self.test_config)
             
-            # Load demo TTS plugin
-            demo_plugin = DemoTTSPlugin(self.test_config)
-            if demo_plugin.initialize():
-                tts_engine.load_plugin_instance(demo_plugin)
-                print(f"✅ Demo TTS plugin loaded")
+            # Load Sesame CSM plugin (Pure CSM system)
+            sesame_plugin = SesameCSMPlugin(raw_config)
+            if sesame_plugin.initialize(raw_config):
+                if tts_engine.load_plugin_instance(sesame_plugin):
+                    print(f"✅ Sesame CSM plugin loaded (Pure CSM system)")
+                else:
+                    print(f"❌ Failed to load Sesame CSM plugin")
+                    return False
+            else:
+                print(f"❌ Failed to initialize Sesame CSM plugin")
+                return False
             
             # Test text
             test_text = "Testing VB-Cable integration with complete TTS pipeline."
