@@ -42,8 +42,8 @@ tts:
   
   # Load balancing and performance settings
   monitoring_enabled: true
-  load_balancing: true
-  load_balancing_strategy: "round_robin"  # round_robin, least_used, weighted
+  load_balancing: false
+  load_balancing_strategy: "weighted"  # round_robin, least_used, weighted
   health_check_interval: 30.0
   engine_priority: ["sesame_csm", "pyttsx3", "sapi"]
   
@@ -59,6 +59,7 @@ tts:
     device: "auto"  # auto, cpu, cuda
     batch_size: 1
     cache_dir: "./models/cache"
+    audio_output_dir: "./audio_output/test_results"
     quantization: false
     
   pyttsx3:
@@ -247,11 +248,11 @@ error_handling:
 paths:
   # Model storage
   models_dir: "./models"
-  cache_dir: "./cache"
+  cache_dir: "./audio_output/test_results"
   
   # Logs and data
   logs_dir: "./logs"
-  temp_dir: "./temp"
+  temp_dir: "./audio_output/temp_files"
   
   # Configuration
   config_backup_dir: "./config/backups"

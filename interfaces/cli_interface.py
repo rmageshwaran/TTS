@@ -9,6 +9,8 @@ and virtual microphone routing functionality.
 import sys
 import os
 import logging
+import hashlib
+import time
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -170,10 +172,10 @@ For more information, visit: https://github.com/your-repo/tts-virtual-microphone
             bool: True if processing successful
         """
         try:
-            print(f"🔄 Processing text: '{text[:50]}{'...' if len(text) > 50 else ''}'")
+            print(f"Processing text: '{text[:50]}{'...' if len(text) > 50 else ''}'")
             
             # Step 1: Text Processing
-            print("   📝 Processing text...")
+            print("   Processing text...")
             processed_result = self.text_processor.process(text)
             
             if hasattr(processed_result, 'processed_text'):
@@ -181,60 +183,63 @@ For more information, visit: https://github.com/your-repo/tts-virtual-microphone
             else:
                 processed_text = str(processed_result)
             
-            print(f"   ✅ Text processed: {len(processed_text)} characters")
+            print(f"   Text processed: {len(processed_text)} characters")
             
             # Step 2: TTS Generation
-            print("   🎤 Generating speech...")
+            print("   Generating speech...")
             tts_result = self.tts_engine.generate_speech(
                 processed_text, 
                 speaker_id=speaker_id
             )
             
             if not tts_result.success:
-                print(f"   ❌ TTS generation failed: {tts_result.error_message}")
+                print(f"   TTS generation failed: {tts_result.error_message}")
                 return False
             
-            print(f"   ✅ Speech generated: {len(tts_result.audio_data)} bytes")
+            print(f"   Speech generated: {len(tts_result.audio_data)} bytes")
             
             # Step 3: Audio Processing
-            print("   🔊 Processing audio...")
+            print("   Processing audio...")
             audio_result = self.audio_processor.process(tts_result.audio_data)
             
             if not audio_result.success:
-                print(f"   ❌ Audio processing failed: {audio_result.error_message}")
+                print(f"   Audio processing failed: {audio_result.error_message}")
                 return False
             
-            print(f"   ✅ Audio processed: {len(audio_result.audio_data)} bytes")
+            print(f"   Audio processed: {len(audio_result.audio_data)} bytes")
+            
+            # Step 3.5: Save audio file to output directory
+            self._save_audio_file(audio_result.audio_data, processed_text)
             
             # Step 4: Virtual Audio Routing
-            print("   🎛️ Routing to virtual microphone...")
+            print("   Routing to virtual microphone...")
             
             # Try VB-Cable first if available
             if self.virtual_audio.is_vb_cable_available():
                 routing_result = self.virtual_audio.route_via_vb_cable(audio_result.audio_data)
                 if routing_result.success:
-                    print(f"   ✅ Routed via VB-Cable: {routing_result.device_used}")
+                    print(f"   Routed via VB-Cable: {routing_result.device_used}")
                     print(f"      Latency: {routing_result.latency:.2f}ms")
                 else:
-                    print(f"   ⚠️  VB-Cable routing failed: {routing_result.error_message}")
-                    print("   🔄 Trying standard routing...")
+                    print(f"   VB-Cable routing failed: {routing_result.error_message}")
+                    print("   Trying standard routing...")
                     routing_result = self.virtual_audio.route_audio(audio_result.audio_data)
             else:
-                print("   ℹ️  VB-Cable not available, using standard routing")
+                print("   VB-Cable not available, using standard routing")
                 routing_result = self.virtual_audio.route_audio(audio_result.audio_data)
             
             if routing_result.success:
-                print(f"   ✅ Audio routing successful!")
+                print(f"   Audio routing successful!")
                 print(f"      Device: {getattr(routing_result, 'device_used', 'default')}")
             else:
-                print(f"   ❌ Audio routing failed: {getattr(routing_result, 'error_message', 'Unknown error')}")
+                print(f"   Audio routing failed: {getattr(routing_result, 'error_message', 'Unknown error')}")
                 return False
             
-            print(f"🎉 Processing complete! Text successfully converted to virtual microphone.")
+            print(f"Processing complete! Text successfully converted to virtual microphone.")
             return True
             
         except Exception as e:
-            print(f"❌ Processing failed: {e}")
+            print(f"Processing failed: {e}")
             logger.error(f"CLI text processing error: {e}")
             return False
     
@@ -415,6 +420,32 @@ EXAMPLES:
             
         except Exception as e:
             print(f"❌ Error getting status: {e}")
+    
+    def _save_audio_file(self, audio_data: bytes, text: str):
+        """Save generated audio to the output directory."""
+        try:
+            # Get audio output directory from config
+            audio_output_dir = Path(self.config.get('tts', {}).get('sesame_csm', {}).get('audio_output_dir', './audio_output/test_results'))
+            audio_output_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Generate cache key similar to sesame_csm plugin
+            cache_key = hashlib.md5(text.encode()).hexdigest()
+            
+            # Create filename with timestamp for uniqueness
+            timestamp = int(time.time())
+            filename = f"audio_{cache_key}_{timestamp}.wav"
+            filepath = audio_output_dir / filename
+            
+            # Save audio file
+            with open(filepath, 'wb') as f:
+                f.write(audio_data)
+            
+            print(f"   💾 Audio saved: {filepath}")
+            logger.debug(f"Audio file saved to: {filepath}")
+            
+        except Exception as e:
+            logger.warning(f"Failed to save audio file: {e}")
+            print(f"   ⚠️  Could not save audio file: {e}")
     
     def cleanup(self):
         """Clean up resources."""

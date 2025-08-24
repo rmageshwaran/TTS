@@ -66,9 +66,11 @@ def main():
         # Load configuration
         config_manager = ConfigManager(args.config)
         config = config_manager.load()
+        # Use raw config dictionary to preserve all YAML sections (like tts.sesame_csm)
+        raw_config = config_manager.raw_config
         
         # Setup logging
-        log_level = logging.DEBUG if args.debug else config.application.log_level
+        log_level = "DEBUG" if args.debug else config.application.log_level
         setup_logging(level=log_level, verbose=args.verbose)
         
         logger = logging.getLogger(__name__)
@@ -78,32 +80,32 @@ def main():
         if args.api:
             # Start REST API server
             logger.info("Starting REST API interface")
-            interface = APIInterface(config)
+            interface = APIInterface(raw_config)
             interface.start(port=args.port)
             
         elif args.gui:
             # Start GUI interface
             logger.info("Starting GUI interface")
-            interface = GUIInterface(config)
+            interface = GUIInterface(raw_config)
             interface.start()
             
         elif args.test:
             # Run system tests
             logger.info("Running system tests")
             from tests.system_test import run_system_tests
-            run_system_tests(config)
+            run_system_tests(raw_config)
             
         elif args.test_tts:
             # Test TTS engine
             logger.info("Testing TTS engine")
             from tests.tts_test import test_tts_engine
-            test_tts_engine(config)
+            test_tts_engine(raw_config)
             
         elif args.test_audio:
             # Test virtual audio
             logger.info("Testing virtual audio")
             from tests.audio_test import test_virtual_audio
-            test_virtual_audio(config)
+            test_virtual_audio(raw_config)
             
         elif args.list_devices:
             # List audio devices
@@ -114,7 +116,7 @@ def main():
         else:
             # Default to CLI interface
             logger.info("Starting CLI interface")
-            interface = CLIInterface(config)
+            interface = CLIInterface(raw_config)
             
             if args.interactive:
                 interface.start_interactive()

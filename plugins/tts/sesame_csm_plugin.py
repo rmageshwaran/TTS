@@ -173,9 +173,10 @@ class SesameCSMPlugin(BaseTTSPlugin):
         try:
             start_time = time.time()
             
-            # Check cache first
+            # Check cache first (TEMPORARILY DISABLED FOR TESTING)
             cache_key = self._generate_cache_key(text, speaker_id, context)
-            cached_audio = self._get_cached_audio(cache_key)
+            # cached_audio = self._get_cached_audio(cache_key)
+            cached_audio = None  # Force fresh generation to test fixes
             
             if cached_audio is not None:
                 self.cache_hits += 1
@@ -750,25 +751,49 @@ class SesameCSMPlugin(BaseTTSPlugin):
     def _generate_tts_audio(self, text: str) -> np.ndarray:
         """Generate audio using a proper TTS model."""
         try:
-            # Prepare inputs
-            inputs = self.processor(text, return_tensors="pt").to(self.device_type)
+            # CSM works best with shorter text - limit to ~100 characters for reliable generation
+            if len(text) > 100:
+                # Take first 100 characters and ensure we end at a word boundary
+                truncated_text = text[:100]
+                last_space = truncated_text.rfind(' ')
+                if last_space > 50:  # Ensure we have at least 50 characters
+                    text = truncated_text[:last_space]
+                else:
+                    text = truncated_text
+                logger.info(f"🔧 CSM: Truncated text to {len(text)} characters for reliable generation")
             
-            # Generate audio
+            # Format text with speaker ID for CSM
+            formatted_text = f"[0]{text}"
+            logger.info(f"🔧 CSM: Generating audio for: '{formatted_text}'")
+            
+            # Prepare inputs
+            inputs = self.processor(formatted_text, add_special_tokens=True, return_tensors="pt").to(self.device_type)
+            
+            # Generate audio using correct CSM API
             with torch.no_grad():
-                audio = self.model.generate_speech(inputs["input_ids"], self.processor)
+                audio = self.model.generate(**inputs, output_audio=True)
+            
+            # Handle CSM output format (list of tensors)
+            if isinstance(audio, list) and len(audio) > 0:
+                audio_tensor = audio[0]
+            else:
+                audio_tensor = audio
             
             # Convert to numpy
-            if torch.is_tensor(audio):
-                if audio.is_cuda:
-                    audio_data = audio.cpu().numpy()
+            if torch.is_tensor(audio_tensor):
+                if audio_tensor.is_cuda:
+                    audio_data = audio_tensor.cpu().numpy()
                 else:
-                    audio_data = audio.numpy()
+                    audio_data = audio_tensor.numpy()
             else:
-                audio_data = np.array(audio)
+                audio_data = np.array(audio_tensor)
             
-            # Ensure it's 1D
-            if len(audio_data.shape) > 1:
-                audio_data = audio_data.flatten()
+            # Ensure proper format
+            audio_data = audio_data.astype(np.float32)
+            
+            # Normalize if needed
+            if np.max(np.abs(audio_data)) > 1.0:
+                audio_data = audio_data / np.max(np.abs(audio_data)) * 0.95
             
             return audio_data
             
@@ -779,6 +804,17 @@ class SesameCSMPlugin(BaseTTSPlugin):
     def _generate_csm_audio(self, text: str) -> np.ndarray:
         """Generate audio using CSM model - CORRECTED IMPLEMENTATION."""
         try:
+            # CSM works best with shorter text - limit to ~100 characters for reliable generation
+            if len(text) > 100:
+                # Take first 100 characters and ensure we end at a word boundary
+                truncated_text = text[:100]
+                last_space = truncated_text.rfind(' ')
+                if last_space > 50:  # Ensure we have at least 50 characters
+                    text = truncated_text[:last_space]
+                else:
+                    text = truncated_text
+                logger.info(f"🔧 CSM: Truncated text to {len(text)} characters for reliable generation")
+            
             # Prepare text with speaker ID (official CSM format)
             speaker_id = 0  # Default speaker
             formatted_text = f"[{speaker_id}]{text}"

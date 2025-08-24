@@ -1,18 +1,5 @@
 Welcome to the TTS Virtual Microphone demonstration!
-
-This is an example text file that you can use to test the file processing feature.
-
-You can process this file by running:
-python main.py --file example_script.txt
-
-This application converts text to speech and routes it to your virtual microphone for use in Discord, Zoom, gaming, and streaming applications.
-
-Some example phrases you might find useful:
-
-Welcome to my stream, everyone!
 Thanks for joining today's presentation.
 Please remember to like and subscribe.
 Let's get started with today's content.
 Thanks for watching, see you next time!
-
-Try editing this file and adding your own content for testing.
