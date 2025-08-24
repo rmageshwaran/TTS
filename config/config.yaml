@@ -1,0 +1,267 @@
+# TTS Virtual Microphone Configuration File
+# This file contains all configuration settings for the application
+
+application:
+  name: "TTS Virtual Microphone"
+  version: "1.0.0"
+  log_level: "INFO"
+
+text:
+  max_length: 5000
+  min_length: 1
+  enable_ssml: true
+  default_language: "en"
+  chunk_size: 1000
+  enable_pronunciation: true
+  custom_pronunciations:
+    API: "A P I"
+    URL: "U R L"
+    HTTP: "H T T P"
+    HTTPS: "H T T P S"
+    CPU: "C P U"
+    GPU: "G P U"
+    RAM: "R A M"
+    USB: "U S B"
+    WiFi: "Wi Fi"
+    AI: "A I"
+    TTS: "T T S"
+
+# TTS engine configuration
+tts:
+  # Primary TTS engine
+  default_engine: "sesame_csm"
+  
+  # Fallback engine when primary fails
+  fallback_engine: "pyttsx3"
+  
+  # Model path for Sesame CSM
+  model_path: "./models/sesame-csm-1b"
+  
+  # Context settings for conversational TTS
+  context_length: 4
+  
+  # Load balancing and performance settings
+  monitoring_enabled: true
+  load_balancing: true
+  load_balancing_strategy: "round_robin"  # round_robin, least_used, weighted
+  health_check_interval: 30.0
+  engine_priority: ["sesame_csm", "pyttsx3", "sapi"]
+  
+  # Voice settings
+  voice_settings:
+    speaker_id: 0
+    temperature: 1.0
+    max_audio_length_ms: 10000
+  
+  # Engine-specific configurations
+  sesame_csm:
+    model_name: "sesame/csm-1b"
+    device: "auto"  # auto, cpu, cuda
+    batch_size: 1
+    cache_dir: "./models/cache"
+    quantization: false
+    
+  pyttsx3:
+    rate: 200
+    volume: 0.9
+    voice_index: 0
+    
+  sapi:
+    rate: 0
+    volume: 100
+
+# Audio processing settings
+audio:
+  sample_rate: 24000
+  channels: 1
+  format: "wav"  # wav, mp3, ogg
+  quality: "high"  # low, medium, high
+  normalization: true
+  buffer_size: 1024
+  streaming: true
+  
+  # Audio effects
+  effects:
+    enabled: false
+    reverb: 0.1
+    noise_gate: true
+
+# Virtual audio configuration
+virtual_audio:
+  # Target virtual audio device name
+  device_name: "CABLE Input"
+  
+  # Automatically detect and select best device
+  auto_detect: true
+  
+  # Fallback device when VB-Cable not available
+  fallback_device: "default"
+  
+  # Audio buffer settings
+  buffer_size: 1024
+  stream_buffer_size: 8192
+  max_queue_size: 50
+  
+  # Latency optimization
+  latency_mode: "normal"  # low, normal, high
+  
+  # Advanced streaming features
+  enable_monitoring: true
+  auto_recovery: true
+  
+  # Connection settings
+  connection:
+    timeout: 5.0
+    retry_attempts: 3
+    retry_delay: 1.0
+
+# VB-Cable integration configuration
+vb_cable:
+  # Auto-detect VB-Cable installation and devices
+  auto_detect: true
+  
+  # Preferred VB-Cable type (virtual_cable, voicemeeter, voicemeeter_banana, voicemeeter_potato)
+  preferred_type: "virtual_cable"
+  
+  # Latency optimization
+  enable_latency_optimization: true
+  routing_buffer_size: 512
+  max_routing_attempts: 3
+  
+  # Monitoring and metrics
+  enable_monitoring: true
+  
+  # Advanced routing settings
+  routing:
+    direct_mode: true
+    low_latency_mode: true
+    buffer_optimization: true
+
+# User interface settings
+interfaces:
+  # Command Line Interface
+  cli:
+    enabled: true
+    color_output: true
+    verbose: false
+    
+  # REST API Interface
+  api:
+    enabled: false
+    host: "localhost"
+    port: 8080
+    cors_enabled: true
+    rate_limiting: true
+    max_requests_per_minute: 60
+    
+  # GUI Interface (optional)
+  gui:
+    enabled: false
+    theme: "default"
+    window_size: [800, 600]
+
+# Logging configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "./logs/tts_app.log"
+  max_size: "10MB"
+  backup_count: 5
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  console_output: true
+
+# Plugin system settings
+plugins:
+  # Plugin directories to scan
+  directories:
+    - "./plugins/tts"
+    - "./plugins/audio"
+    
+  # Plugin loading settings
+  auto_load: true
+  load_timeout: 30
+  
+  # Plugin sandboxing
+  sandbox_enabled: false
+
+# Performance settings
+performance:
+  # Memory management
+  memory:
+    max_model_cache_size: "2GB"
+    garbage_collection_interval: 300  # seconds
+    
+  # CPU/GPU settings
+  processing:
+    max_threads: 4
+    gpu_memory_fraction: 0.8
+    
+  # Audio streaming
+  streaming:
+    chunk_size: 1024
+    max_buffer_size: 8192
+    latency_target: 500  # milliseconds
+
+# Security settings
+security:
+  # Input validation
+  input_validation:
+    max_text_length: 10000
+    allowed_file_types: [".txt", ".md"]
+    sanitize_input: true
+    
+  # Model security
+  model_verification:
+    verify_checksums: true
+    allow_remote_models: false
+
+# Development and testing settings
+development:
+  # Debug settings
+  debug_mode: false
+  verbose_logging: false
+  
+  # Testing
+  test_mode: false
+  mock_audio_devices: false
+  mock_tts_engines: false
+  
+  # Profiling
+  enable_profiling: false
+  profile_output_dir: "./profiles"
+
+# Error handling and recovery
+error_handling:
+  # Retry settings
+  max_retries: 3
+  retry_delay: 1.0
+  
+  # Fallback behavior
+  graceful_degradation: true
+  continue_on_error: true
+  
+  # Error reporting
+  report_errors: true
+  error_log_file: "./logs/errors.log"
+
+# File and directory settings
+paths:
+  # Model storage
+  models_dir: "./models"
+  cache_dir: "./cache"
+  
+  # Logs and data
+  logs_dir: "./logs"
+  temp_dir: "./temp"
+  
+  # Configuration
+  config_backup_dir: "./config/backups"
+  
+  # Plugins
+  plugins_dir: "./plugins"
+
+# Environment-specific overrides
+# These settings can be overridden by environment variables
+# Example: TTS_AUDIO_SAMPLE_RATE=48000 will override audio.sample_rate
+environment_overrides:
+  enabled: true
+  prefix: "TTS_"

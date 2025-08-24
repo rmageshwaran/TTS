@@ -1,0 +1,33 @@
+# Testing dependencies for TTS Virtual Microphone
+# Install with: pip install -r requirements-test.txt
+
+# Include base requirements
+-r requirements.txt
+
+# Core testing framework
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+pytest-asyncio>=0.21.0
+pytest-xdist>=3.2.0  # Parallel test execution
+
+# Testing utilities
+factory-boy>=3.2.0  # Test data generation
+faker>=18.0.0  # Fake data generation
+responses>=0.23.0  # HTTP request mocking
+
+# Audio testing
+scipy>=1.9.0  # Audio signal processing for tests
+
+# Performance testing
+pytest-benchmark>=4.0.0
+
+# Test reporting
+pytest-html>=3.1.0
+pytest-json-report>=1.5.0
+
+# Coverage reporting
+coverage>=7.0.0
+
+# Mock audio devices for testing
+unittest-mock>=1.0.0

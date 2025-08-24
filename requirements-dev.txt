@@ -1,0 +1,45 @@
+# Development dependencies for TTS Virtual Microphone
+# Install with: pip install -r requirements-dev.txt
+
+# Include base requirements
+-r requirements.txt
+
+# Testing framework
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+pytest-asyncio>=0.21.0
+
+# Code formatting and linting
+black>=22.0.0
+flake8>=5.0.0
+isort>=5.12.0
+mypy>=0.991
+
+# Pre-commit hooks
+pre-commit>=2.20.0
+
+# Documentation
+sphinx>=5.0.0
+sphinx-rtd-theme>=1.2.0
+
+# Development tools
+ipython>=8.0.0
+jupyter>=1.0.0
+
+# Profiling and debugging
+memory-profiler>=0.60.0
+line-profiler>=4.0.0
+pdb++>=0.10.3
+
+# Type checking stubs
+types-PyYAML>=6.0.0
+types-requests>=2.28.0
+
+# Audio analysis tools (for development/testing)
+librosa>=0.9.0
+matplotlib>=3.6.0
+
+# Additional utilities
+rich>=13.0.0  # Better console output
+click>=8.1.0  # CLI framework
