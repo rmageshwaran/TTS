@@ -291,6 +291,144 @@ For more information, visit: https://github.com/your-repo/tts-virtual-microphone
             logger.error(f"CLI file processing error: {e}")
             return False
     
+    def start_meeting_mode(self):
+        """Start meeting mode optimized for Zoom integration."""
+        print("🎤 TTS VIRTUAL MICROPHONE - MEETING MODE")
+        print("=" * 60)
+        print("🔗 Optimized for Zoom/Teams integration")
+        print("📋 Quick Setup Checklist:")
+        print("   ✅ Set Zoom microphone to 'CABLE Output (VB-Audio Point)'")
+        print("   ✅ Set Zoom microphone volume to 100%")
+        print("   ✅ Disable 'Automatically adjust microphone volume'")
+        print("   ✅ Disable 'Suppress background noise'")
+        print()
+        print("💡 Meeting Tips:")
+        print("   • Type your response and press Enter")
+        print("   • Use short phrases for natural conversation")
+        print("   • Mute/unmute in Zoom as needed")
+        print("   • Type 'help' for commands, 'quit' to exit")
+        print()
+        
+        # Test VB-Cable connection
+        print("🔧 Testing VB-Cable connection...")
+        try:
+            # Quick VB-Cable test
+            test_text = "VB Cable connection test"
+            if self.process_text(test_text, speaker_id=0):
+                print("✅ VB-Cable connection successful!")
+            else:
+                print("⚠️  VB-Cable test failed - check configuration")
+        except Exception as e:
+            print(f"⚠️  VB-Cable test error: {e}")
+        
+        print()
+        print("🎯 Ready for meeting! Enter your first message:")
+        
+        # Start meeting interaction loop
+        self._meeting_interaction_loop()
+    
+    def _meeting_interaction_loop(self):
+        """Interactive loop optimized for meeting mode."""
+        # Meeting-specific settings
+        speaker_id = 0
+        quick_responses = {
+            '1': "Thank you",
+            '2': "I agree",
+            '3': "Good point", 
+            '4': "Let me check on that",
+            '5': "Could you repeat that please",
+            '6': "I have a question",
+            '7': "Yes, that sounds good",
+            '8': "No, I don't think so",
+            '9': "Let me think about that",
+            '0': "Thank you everyone"
+        }
+        
+        print("🚀 Quick responses (press number + Enter):")
+        for key, response in quick_responses.items():
+            print(f"   {key}: {response}")
+        print()
+        
+        while True:
+            try:
+                # Get user input with meeting-friendly prompt
+                user_input = input("💬 Meeting > ").strip()
+                
+                if not user_input:
+                    continue
+                    
+                # Handle special commands
+                if user_input.lower() in ['quit', 'exit', 'q']:
+                    print("👋 Leaving meeting mode. Goodbye!")
+                    break
+                elif user_input.lower() in ['help', 'h']:
+                    self._show_meeting_help(quick_responses)
+                    continue
+                elif user_input in quick_responses:
+                    # Quick response
+                    text = quick_responses[user_input]
+                    print(f"🎯 Quick response: {text}")
+                elif user_input.lower() == 'test':
+                    # Test VB-Cable connection
+                    text = "VB Cable test message"
+                    print("🔧 Testing VB-Cable...")
+                elif user_input.lower().startswith('speaker '):
+                    # Change speaker
+                    try:
+                        speaker_id = int(user_input.split()[1])
+                        print(f"🎤 Speaker changed to: {speaker_id}")
+                        continue
+                    except (IndexError, ValueError):
+                        print("❌ Invalid speaker format. Use: speaker <id>")
+                        continue
+                else:
+                    # Regular text input
+                    text = user_input
+                
+                # Process the text
+                print(f"🎤 Generating speech...")
+                success = self.process_text(text, speaker_id=speaker_id)
+                
+                if success:
+                    print("✅ Speech generated successfully!")
+                    print("🔊 Audio sent to VB-Cable → Zoom microphone")
+                else:
+                    print("❌ Speech generation failed")
+                    
+                print()  # Add spacing between interactions
+                    
+            except KeyboardInterrupt:
+                print("\n👋 Meeting mode interrupted. Goodbye!")
+                break
+            except Exception as e:
+                print(f"❌ Error: {e}")
+                logger.error(f"Meeting mode error: {e}")
+    
+    def _show_meeting_help(self, quick_responses):
+        """Show help for meeting mode."""
+        print("\n📖 MEETING MODE HELP")
+        print("=" * 50)
+        print("TEXT INPUT:")
+        print("   • Type any text and press Enter to generate speech")
+        print("   • Speech is automatically sent to VB-Cable → Zoom")
+        print()
+        print("QUICK RESPONSES:")
+        for key, response in quick_responses.items():
+            print(f"   {key} → {response}")
+        print()
+        print("COMMANDS:")
+        print("   help, h     → Show this help")
+        print("   test        → Test VB-Cable connection")
+        print("   speaker <n> → Change speaker ID (0-9)")
+        print("   quit, exit  → Exit meeting mode")
+        print()
+        print("ZOOM INTEGRATION:")
+        print("   1. Set Zoom microphone to 'CABLE Output (VB-Audio Point)'")
+        print("   2. Disable auto-adjust and noise suppression in Zoom")
+        print("   3. Mute/unmute in Zoom as needed")
+        print("   4. Generated speech appears as your microphone input")
+        print()
+    
     def start_interactive(self):
         """Start interactive mode for continuous text processing."""
         print("🎤 TTS Virtual Microphone - Interactive Mode")

@@ -33,6 +33,7 @@ def parse_arguments():
     parser.add_argument("--text", "-t", type=str, help="Text to convert to speech")
     parser.add_argument("--file", "-f", type=str, help="File containing text to convert")
     parser.add_argument("--interactive", "-i", action="store_true", help="Start interactive mode")
+    parser.add_argument("--meeting", "-m", action="store_true", help="Start meeting mode (optimized for Zoom integration)")
     
     # Interface options
     parser.add_argument("--api", action="store_true", help="Start REST API server")
@@ -118,7 +119,9 @@ def main():
             logger.info("Starting CLI interface")
             interface = CLIInterface(raw_config)
             
-            if args.interactive:
+            if args.meeting:
+                interface.start_meeting_mode()
+            elif args.interactive:
                 interface.start_interactive()
             elif args.text:
                 interface.process_text(args.text, speaker_id=args.speaker, temperature=args.temperature)
